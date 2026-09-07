@@ -1,8 +1,11 @@
 import React from 'react';
-import { ArrowUp, Github, Mail, Linkedin, Heart } from 'lucide-react';
+import { ArrowUp, Github, Mail, Linkedin, Shield } from 'lucide-react';
 import { PERSONAL_INFO } from '../data/portfolioData';
+import { usePortfolio } from '../context/PortfolioContext';
 
 export const Footer: React.FC = () => {
+  const { openAdminLogin, isAdmin } = usePortfolio();
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -33,8 +36,9 @@ export const Footer: React.FC = () => {
             <a href="#" className="hover:text-white transition-colors">Home</a>
             <a href="#about" className="hover:text-white transition-colors">About</a>
             <a href="#skills" className="hover:text-white transition-colors">Skills</a>
-            <a href="#internships" className="hover:text-white transition-colors">Internships</a>
+            <a href="#experience" className="hover:text-white transition-colors">Internships</a>
             <a href="#projects" className="hover:text-white transition-colors">Projects</a>
+            <a href="#courses" className="hover:text-white transition-colors">Courses</a>
             <a href="#certifications" className="hover:text-white transition-colors">Certifications</a>
             <a href="#contact" className="hover:text-white transition-colors">Contact</a>
           </div>
@@ -89,10 +93,17 @@ export const Footer: React.FC = () => {
           <div>
             © {new Date().getFullYear()} Yogesh. Built with modern web technologies.
           </div>
-          <div className="flex items-center gap-2">
-            <span>Designed for excellence</span>
-            <span>•</span>
+          <div className="flex items-center gap-3">
             <span>Puducherry, India</span>
+            <span>•</span>
+            <button
+              onClick={openAdminLogin}
+              className="inline-flex items-center gap-1.5 text-slate-400 hover:text-blue-400 transition-colors cursor-pointer"
+              title="Portfolio Owner Portal"
+            >
+              <Shield className="w-3.5 h-3.5 text-blue-500" />
+              <span>{isAdmin ? 'Admin Active' : 'Owner Portal'}</span>
+            </button>
           </div>
         </div>
 

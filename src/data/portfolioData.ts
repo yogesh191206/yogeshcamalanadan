@@ -1,4 +1,4 @@
-import { Project, Experience, SkillItem, Certificate, Education } from '../types';
+import { Project, Experience, SkillItem, Certificate, Education, Course, InternshipItem } from '../types';
 
 export const PERSONAL_INFO = {
   name: "Yogesh Camalanadan",
@@ -166,7 +166,8 @@ export const CERTIFICATES: Certificate[] = [
     issuer: "Eduskills",
     tag: "Full-Stack & Backend",
     description: "Hands-on certification covering full-stack web architecture, Python backend scripting, and responsive frontend implementation.",
-    skills: ["Python", "Full Stack", "HTML/CSS", "JavaScript"]
+    skills: ["Python", "Full Stack", "HTML/CSS", "JavaScript"],
+    date: "07/2025"
   },
   {
     id: "cert-ibm",
@@ -174,7 +175,8 @@ export const CERTIFICATES: Certificate[] = [
     issuer: "IBM SkillsBuild",
     tag: "Web Foundations",
     description: "Accreditation on internet architecture, client-server models, responsive web design principles, and enterprise web fundamentals.",
-    skills: ["Web Standards", "Responsive UI", "Client-Server"]
+    skills: ["Web Standards", "Responsive UI", "Client-Server"],
+    date: "04/2025"
   },
   {
     id: "cert-coursera",
@@ -182,7 +184,8 @@ export const CERTIFICATES: Certificate[] = [
     issuer: "Coursera",
     tag: "Frontend Mastery",
     description: "In-depth course on modern frontend engineering, CSS layout mechanisms, interactive JavaScript DOM APIs, and responsive design.",
-    skills: ["HTML5", "CSS3", "JavaScript", "DOM Manipulation"]
+    skills: ["HTML5", "CSS3", "JavaScript", "DOM Manipulation"],
+    date: "02/2025"
   },
   {
     id: "cert-simplilearn",
@@ -190,7 +193,8 @@ export const CERTIFICATES: Certificate[] = [
     issuer: "Simplilearn",
     tag: "Version Control",
     description: "Training in distributed version control, repository maintenance, collaborative workflows, and GitHub open-source practices.",
-    skills: ["Git", "GitHub", "VCS", "Collaboration"]
+    skills: ["Git", "GitHub", "VCS", "Collaboration"],
+    date: "01/2025"
   },
   {
     id: "cert-scalar",
@@ -198,6 +202,75 @@ export const CERTIFICATES: Certificate[] = [
     issuer: "Scalar",
     tag: "Core Programming",
     description: "Fundamental training in Java programming paradigms, Object-Oriented Programming (OOP) concepts, and algorithmic problem-solving.",
+    skills: ["Java", "OOP", "Data Types", "Algorithms"],
+    date: "11/2024"
+  }
+];
+
+export const INITIAL_INTERNSHIPS: InternshipItem[] = [
+  {
+    id: "thiranex",
+    role: "Web Development Intern",
+    company: "Thiranex",
+    badge: "30-Day Internship",
+    duration: "1 Month (07/2026 – 08/2026)",
+    description: "Built responsive web pages, practiced HTML, CSS, JavaScript, and learned how to develop user-friendly interfaces.",
+    skills: ["HTML", "CSS", "JavaScript", "Responsive Design"],
+    certificate: "Completed with Certificate of Excellence"
+  },
+  {
+    id: "eduskills",
+    role: "Python Full Stack Development Intern",
+    company: "Eduskills",
+    badge: null,
+    duration: "2 Months (05/2025 – 07/2025)",
+    description: "Gained knowledge in Python backend development, worked with basic full-stack concepts, and understood web application structure.",
+    skills: ["Python", "Full Stack Basics", "Backend Concepts"],
+    certificate: "Verified by Eduskills Academy"
+  },
+  {
+    id: "codealpha",
+    role: "Frontend Development Intern",
+    company: "CodeAlpha",
+    badge: "30-Day Internship",
+    duration: "1 Month (08/2026 – 08/2026)",
+    description: "Worked on front-end tasks, improved HTML/CSS layouts, and built small web-based components as part of the internship.",
+    skills: ["HTML", "CSS", "Frontend Development"],
+    certificate: "Certificate of Completion"
+  }
+];
+
+export const INITIAL_COURSES: Course[] = [
+  {
+    id: "course-coursera-web",
+    name: "HTML, CSS, and Javascript for Web Developers",
+    platform: "Coursera (Johns Hopkins University)",
+    completionDate: "February 2025",
+    description: "Comprehensive foundation in modern web development standards, responsive CSS layout frameworks, and interactive DOM programming.",
+    skills: ["HTML5", "CSS3", "JavaScript", "Responsive Design"]
+  },
+  {
+    id: "course-ibm-skillsbuild",
+    name: "Web Development Fundamentals & Cloud Concepts",
+    platform: "IBM SkillsBuild",
+    completionDate: "April 2025",
+    description: "Client-server architecture, modern web accessibility protocols, version control, and cloud-hosted application basics.",
+    skills: ["Client-Server Architecture", "Web Standards", "Cloud Basics"]
+  },
+  {
+    id: "course-eduskills-python",
+    name: "Python Programming & Backend Architecture",
+    platform: "Eduskills Academy",
+    completionDate: "July 2025",
+    description: "Structured Python programming, object-oriented concepts, API endpoint fundamentals, and relational database connections.",
+    skills: ["Python", "OOP", "Backend Logic", "Database Basics"]
+  },
+  {
+    id: "course-scalar-java",
+    name: "Java Masterclass & Object-Oriented Programming",
+    platform: "Scalar Academy",
+    completionDate: "November 2024",
+    description: "Core Java programming principles, encapsulation, inheritance, polymorphism, and problem-solving methodologies.",
     skills: ["Java", "OOP", "Data Types", "Algorithms"]
   }
 ];

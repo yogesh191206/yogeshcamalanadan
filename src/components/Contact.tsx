@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, Check, Copy, Github, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Check, Copy, Github, MessageSquare, AlertCircle, Loader2 } from 'lucide-react';
 import { PERSONAL_INFO } from '../data/portfolioData';
 
 export const Contact: React.FC = () => {
@@ -12,7 +12,9 @@ export const Contact: React.FC = () => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(PERSONAL_INFO.email);
@@ -26,18 +28,48 @@ export const Contact: React.FC = () => {
     setTimeout(() => setCopiedPhone(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) return;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
 
-    const mailtoUrl = `mailto:${PERSONAL_INFO.email}?subject=${encodeURIComponent(
-      formData.subject || `Inquiry from ${formData.name}`
-    )}&body=${encodeURIComponent(
-      `Hello Yogesh,\n\n${formData.message}\n\nFrom: ${formData.name}\nEmail: ${formData.email}`
-    )}`;
+    setIsSubmitting(true);
+    setErrorMessage(null);
 
-    window.open(mailtoUrl, '_blank');
-    setSubmitted(true);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim() || 'Portfolio Contact Inquiry',
+          message: formData.message.trim()
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setErrorMessage(result.message || 'Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      // Fallback: still provide mailto backup if offline
+      const mailtoUrl = `mailto:${PERSONAL_INFO.email}?subject=${encodeURIComponent(
+        formData.subject || `Inquiry from ${formData.name}`
+      )}&body=${encodeURIComponent(
+        `Hello Yogesh,\n\n${formData.message}\n\nFrom: ${formData.name}\nEmail: ${formData.email}`
+      )}`;
+      window.open(mailtoUrl, '_blank');
+      setSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,7 +111,7 @@ export const Contact: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button className="p-2 rounded-lg text-slate-400 hover:text-white">
+              <button className="p-2 rounded-lg text-slate-400 hover:text-white" aria-label="Copy email">
                 {copiedEmail ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -101,7 +133,7 @@ export const Contact: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <button className="p-2 rounded-lg text-slate-400 hover:text-white">
+              <button className="p-2 rounded-lg text-slate-400 hover:text-white" aria-label="Copy phone">
                 {copiedPhone ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -155,16 +187,16 @@ export const Contact: React.FC = () => {
 
               {submitted ? (
                 <div className="p-6 rounded-xl bg-blue-950/40 border border-blue-800/60 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto">
+                  <div className="w-12 h-12 rounded-full bg-blue-600/20 text-emerald-400 flex items-center justify-center mx-auto">
                     <Check className="w-6 h-6" />
                   </div>
-                  <h4 className="text-lg font-semibold text-white">Email Draft Prepared!</h4>
-                  <p className="text-sm text-slate-300">
-                    Your email client has been opened with your message. Thank you for reaching out!
+                  <h4 className="text-lg font-semibold text-white">Message Sent Successfully!</h4>
+                  <p className="text-sm text-slate-300 max-w-md mx-auto">
+                    Thank you for reaching out! Your message has been safely delivered and dispatched to <span className="text-blue-400 font-mono">yogesh191206@gmail.com</span>.
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}
-                    className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium mt-2 cursor-pointer"
+                    className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold mt-2 transition-all cursor-pointer"
                   >
                     Send Another Message
                   </button>
@@ -228,12 +260,29 @@ export const Contact: React.FC = () => {
                     />
                   </div>
 
+                  {errorMessage && (
+                    <div className="p-3 rounded-lg bg-red-950/50 border border-red-800/60 text-xs text-red-300 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    className="w-full sm:w-auto px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-60"
                   >
-                    <Send className="w-4 h-4" />
-                    <span>Send Message</span>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending Message...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Send Message</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}

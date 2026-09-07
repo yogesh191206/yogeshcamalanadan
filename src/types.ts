@@ -38,9 +38,49 @@ export interface Certificate {
   id: string;
   title: string;
   issuer: string;
-  tag: string;
+  tag?: string;
+  date?: string;
   description: string;
   skills: string[];
+  certificateImage?: string;
+  certificateLink?: string;
+  isCustom?: boolean;
+  createdAt?: string;
+}
+
+export interface Course {
+  id: string;
+  name: string;
+  platform: string;
+  completionDate: string;
+  description: string;
+  certificate?: string;
+  skills?: string[];
+  isCustom?: boolean;
+  createdAt?: string;
+}
+
+export interface InternshipItem {
+  id: string;
+  role: string;
+  company: string;
+  badge?: string | null;
+  duration?: string;
+  description: string;
+  skills: string[];
+  certificate?: string;
+  isCustom?: boolean;
+  createdAt?: string;
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+  timestamp: string;
+  read?: boolean;
 }
 
 export interface Education {

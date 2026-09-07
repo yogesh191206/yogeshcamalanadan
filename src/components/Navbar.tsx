@@ -16,11 +16,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenResume }) => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
 
-      const sections = ['home', 'about', 'skills', 'internships', 'projects', 'certifications', 'contact'];
+      const sections = ['home', 'about', 'skills', 'internships', 'projects', 'courses', 'certifications', 'contact'];
       const scrollPosition = window.scrollY + 100;
 
       for (const section of sections) {
-        const el = document.getElementById(section === 'home' ? 'hero' : section === 'internships' ? 'experience' : section === 'certifications' ? 'certificates' : section);
+        const targetId = section === 'home' ? 'hero' : section === 'internships' ? 'experience' : section;
+        const el = document.getElementById(targetId);
         if (el) {
           const top = el.offsetTop;
           const height = el.offsetHeight;
@@ -39,8 +40,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenResume }) => {
     { id: 'home', label: 'Home', href: '#' },
     { id: 'about', label: 'About', href: '#about' },
     { id: 'skills', label: 'Skills', href: '#skills' },
-    { id: 'internships', label: 'Internships', href: '#internships' },
+    { id: 'internships', label: 'Internships', href: '#experience' },
     { id: 'projects', label: 'Projects', href: '#projects' },
+    { id: 'courses', label: 'Courses', href: '#courses' },
     { id: 'certifications', label: 'Certifications', href: '#certifications' },
     { id: 'contact', label: 'Contact', href: '#contact' },
   ];
