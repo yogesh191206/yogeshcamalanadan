@@ -24,6 +24,7 @@ const STORE_FILE = path.join(DATA_DIR, 'portfolio-store.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 
 interface PortfolioStore {
+  projects: any[];
   internships: any[];
   courses: any[];
   certificates: any[];
@@ -33,12 +34,18 @@ function getStore(): PortfolioStore {
   try {
     if (fs.existsSync(STORE_FILE)) {
       const raw = fs.readFileSync(STORE_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      return {
+        projects: Array.isArray(data.projects) ? data.projects : [],
+        internships: Array.isArray(data.internships) ? data.internships : [],
+        courses: Array.isArray(data.courses) ? data.courses : [],
+        certificates: Array.isArray(data.certificates) ? data.certificates : []
+      };
     }
   } catch (err) {
     console.error('Error reading store:', err);
   }
-  return { internships: [], courses: [], certificates: [] };
+  return { projects: [], internships: [], courses: [], certificates: [] };
 }
 
 function saveStore(data: PortfolioStore) {
@@ -269,18 +276,175 @@ app.post('/api/certificates', verifyAdmin, (req, res) => {
   });
 });
 
-// 8. Delete Dynamic Item (Admin)
+// 8. Add Project (Admin)
+app.post('/api/projects', verifyAdmin, (req, res) => {
+  const {
+    title,
+    subtitle,
+    category,
+    description,
+    longDescription,
+    techStack,
+    githubUrl,
+    liveDemoUrl,
+    image,
+    status,
+    date,
+    keyFeatures,
+    metrics,
+    featured
+  } = req.body;
+
+  if (!title?.trim() || !description?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Project Name and Project Description are required.'
+    });
+  }
+
+  const parsedTechStack = Array.isArray(techStack)
+    ? techStack.map(t => String(t).trim()).filter(Boolean)
+    : typeof techStack === 'string'
+      ? techStack.split(',').map(t => t.trim()).filter(Boolean)
+      : ['Web Development'];
+
+  const parsedKeyFeatures = Array.isArray(keyFeatures) && keyFeatures.length > 0
+    ? keyFeatures.map(k => String(k).trim()).filter(Boolean)
+    : typeof keyFeatures === 'string' && keyFeatures.trim()
+      ? keyFeatures.split('\n').map(k => k.trim()).filter(Boolean)
+      : [
+          'Engineered with modern responsive UI and clean component design',
+          'Interactive state handling and performant asset loading',
+          'Structured codebase following modern best practices'
+        ];
+
+  const store = getStore();
+  const newProject = {
+    id: `project-${Date.now()}`,
+    title: title.trim(),
+    subtitle: subtitle?.trim() || `${category || 'Web'} Application`,
+    category: category?.trim() || 'Frontend',
+    description: description.trim(),
+    longDescription: longDescription?.trim() || description.trim(),
+    tags: parsedTechStack.slice(0, 4),
+    techStack: parsedTechStack.length > 0 ? parsedTechStack : ['HTML5', 'CSS3', 'JavaScript'],
+    keyFeatures: parsedKeyFeatures,
+    featured: !!featured,
+    githubUrl: githubUrl ? githubUrl.trim() : undefined,
+    liveDemoUrl: liveDemoUrl ? liveDemoUrl.trim() : undefined,
+    image: image ? image.trim() : undefined,
+    status: status === 'In Progress' ? 'In Progress' : 'Completed',
+    date: date ? date.trim() : undefined,
+    metrics: metrics ? metrics.trim() : (status === 'In Progress' ? 'Active Development' : 'Production Ready'),
+    isCustom: true,
+    createdAt: new Date().toISOString()
+  };
+
+  store.projects.unshift(newProject);
+  saveStore(store);
+
+  res.status(201).json({
+    success: true,
+    message: 'Project added successfully',
+    item: newProject
+  });
+});
+
+// 9. Update Project (Admin)
+app.put('/api/projects/:id', verifyAdmin, (req, res) => {
+  const { id } = req.params;
+  const store = getStore();
+
+  const {
+    title,
+    subtitle,
+    category,
+    description,
+    longDescription,
+    techStack,
+    githubUrl,
+    liveDemoUrl,
+    image,
+    status,
+    date,
+    keyFeatures,
+    metrics,
+    featured
+  } = req.body;
+
+  if (!title?.trim() || !description?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Project Name and Project Description are required.'
+    });
+  }
+
+  const parsedTechStack = Array.isArray(techStack)
+    ? techStack.map(t => String(t).trim()).filter(Boolean)
+    : typeof techStack === 'string'
+      ? techStack.split(',').map(t => t.trim()).filter(Boolean)
+      : ['Web Development'];
+
+  const existingIndex = store.projects.findIndex((p: any) => p.id === id);
+
+  const parsedKeyFeatures = Array.isArray(keyFeatures) && keyFeatures.length > 0
+    ? keyFeatures.map(k => String(k).trim()).filter(Boolean)
+    : existingIndex >= 0 && store.projects[existingIndex].keyFeatures
+      ? store.projects[existingIndex].keyFeatures
+      : [
+          'Engineered with modern responsive UI and clean component design',
+          'Interactive state handling and performant asset loading'
+        ];
+
+  const updatedProject = {
+    id,
+    title: title.trim(),
+    subtitle: subtitle?.trim() || `${category || 'Web'} Application`,
+    category: category?.trim() || 'Frontend',
+    description: description.trim(),
+    longDescription: longDescription?.trim() || description.trim(),
+    tags: parsedTechStack.slice(0, 4),
+    techStack: parsedTechStack.length > 0 ? parsedTechStack : ['HTML5', 'CSS3', 'JavaScript'],
+    keyFeatures: parsedKeyFeatures,
+    featured: featured !== undefined ? !!featured : (existingIndex >= 0 ? store.projects[existingIndex].featured : false),
+    githubUrl: githubUrl ? githubUrl.trim() : undefined,
+    liveDemoUrl: liveDemoUrl ? liveDemoUrl.trim() : undefined,
+    image: image ? image.trim() : undefined,
+    status: status === 'In Progress' ? 'In Progress' : 'Completed',
+    date: date ? date.trim() : undefined,
+    metrics: metrics ? metrics.trim() : (status === 'In Progress' ? 'Active Development' : 'Production Ready'),
+    isCustom: true,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    store.projects[existingIndex] = { ...store.projects[existingIndex], ...updatedProject };
+  } else {
+    store.projects.unshift(updatedProject);
+  }
+
+  saveStore(store);
+
+  res.json({
+    success: true,
+    message: 'Project updated successfully',
+    item: updatedProject
+  });
+});
+
+// 10. Delete Dynamic Item (Admin)
 app.delete('/api/items/:type/:id', verifyAdmin, (req, res) => {
   const { type, id } = req.params;
   const store = getStore();
 
-  if (type === 'internships' || type === 'courses' || type === 'certificates') {
+  if (type === 'projects' || type === 'internships' || type === 'courses' || type === 'certificates') {
     const originalLen = store[type].length;
     store[type] = store[type].filter((item: any) => item.id !== id);
     if (store[type].length !== originalLen) {
       saveStore(store);
       return res.json({ success: true, message: `Item deleted successfully.` });
     }
+    return res.json({ success: true, message: `Item removed successfully.` });
   }
 
   return res.status(404).json({ success: false, message: 'Item not found' });

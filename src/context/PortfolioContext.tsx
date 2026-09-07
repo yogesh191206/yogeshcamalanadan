@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { InternshipItem, Course, Certificate, ContactMessage } from '../types';
-import { INITIAL_INTERNSHIPS, INITIAL_COURSES, CERTIFICATES } from '../data/portfolioData';
+import { Project, InternshipItem, Course, Certificate, ContactMessage } from '../types';
+import { PROJECTS, INITIAL_INTERNSHIPS, INITIAL_COURSES, CERTIFICATES } from '../data/portfolioData';
 
 interface PortfolioContextType {
+  projects: Project[];
   internships: InternshipItem[];
   courses: Course[];
   certificates: Certificate[];
@@ -11,16 +12,19 @@ interface PortfolioContextType {
   loading: boolean;
   loginAdmin: (passcode: string) => Promise<{ success: boolean; message: string }>;
   logoutAdmin: () => void;
+  addProject: (item: Omit<Project, 'id'>) => Promise<{ success: boolean; message: string }>;
+  updateProject: (id: string, item: Partial<Project>) => Promise<{ success: boolean; message: string }>;
   addInternship: (item: Omit<InternshipItem, 'id'>) => Promise<{ success: boolean; message: string }>;
   addCourse: (item: Omit<Course, 'id'>) => Promise<{ success: boolean; message: string }>;
   addCertificate: (item: Omit<Certificate, 'id'>) => Promise<{ success: boolean; message: string }>;
-  deleteItem: (type: 'internships' | 'courses' | 'certificates', id: string) => Promise<{ success: boolean; message: string }>;
+  deleteItem: (type: 'projects' | 'internships' | 'courses' | 'certificates', id: string) => Promise<{ success: boolean; message: string }>;
   isAdminLoginOpen: boolean;
   openAdminLogin: () => void;
   closeAdminLogin: () => void;
   isAddModalOpen: boolean;
-  addModalType: 'internship' | 'course' | 'certificate' | null;
-  openAddModal: (type: 'internship' | 'course' | 'certificate') => void;
+  addModalType: 'project' | 'internship' | 'course' | 'certificate' | null;
+  editingProject: Project | null;
+  openAddModal: (type: 'project' | 'internship' | 'course' | 'certificate', projectToEdit?: Project | null) => void;
   closeAddModal: () => void;
   messages: ContactMessage[];
   fetchMessages: () => Promise<void>;
@@ -33,6 +37,23 @@ const LOCAL_STORAGE_KEY = 'yogesh_portfolio_store_v1';
 const ADMIN_TOKEN_KEY = 'yogesh_admin_token';
 
 export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [projects, setProjects] = useState<Project[]>(() => {
+    try {
+      const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed.projects) && parsed.projects.length > 0) {
+          const customIds = new Set(parsed.projects.map((p: Project) => p.id));
+          const initials = PROJECTS.filter(p => !customIds.has(p.id));
+          return [...parsed.projects, ...initials];
+        }
+      }
+    } catch (e) {
+      console.warn('Local cache read error', e);
+    }
+    return PROJECTS;
+  });
+
   const [internships, setInternships] = useState<InternshipItem[]>(() => {
     try {
       const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -93,7 +114,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [addModalType, setAddModalType] = useState<'internship' | 'course' | 'certificate' | null>(null);
+  const [addModalType, setAddModalType] = useState<'project' | 'internship' | 'course' | 'certificate' | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const [messages, setMessages] = useState<ContactMessage[]>([]);
 
@@ -104,18 +126,23 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
+          const serverProjects: Project[] = json.data.projects || [];
           const serverInternships: InternshipItem[] = json.data.internships || [];
           const serverCourses: Course[] = json.data.courses || [];
           const serverCertificates: Certificate[] = json.data.certificates || [];
 
           // Save custom data locally as backup
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+            projects: serverProjects,
             internships: serverInternships,
             courses: serverCourses,
             certificates: serverCertificates
           }));
 
           // Merge server custom items with static defaults
+          const customProjIds = new Set(serverProjects.map(p => p.id));
+          setProjects([...serverProjects, ...PROJECTS.filter(p => !customProjIds.has(p.id))]);
+
           const customIntIds = new Set(serverInternships.map(i => i.id));
           setInternships([...serverInternships, ...INITIAL_INTERNSHIPS.filter(i => !customIntIds.has(i.id))]);
 
@@ -229,6 +256,66 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.removeItem(ADMIN_TOKEN_KEY);
   };
 
+  // Add Project
+  const addProject = async (item: Omit<Project, 'id'>) => {
+    if (!token) return { success: false, message: 'Unauthorized' };
+
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(item)
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.item) {
+        setProjects(prev => [data.item, ...prev]);
+        closeAddModal();
+        return { success: true, message: 'Project added successfully!' };
+      }
+      return { success: false, message: data.message || 'Failed to add project' };
+    } catch (err) {
+      const newItem: Project = {
+        ...item,
+        id: `project-${Date.now()}`,
+        isCustom: true,
+        createdAt: new Date().toISOString()
+      };
+      setProjects(prev => [newItem, ...prev]);
+      closeAddModal();
+      return { success: true, message: 'Project saved locally!' };
+    }
+  };
+
+  // Update Project
+  const updateProject = async (id: string, item: Partial<Project>) => {
+    if (!token) return { success: false, message: 'Unauthorized' };
+
+    try {
+      const res = await fetch(`/api/projects/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(item)
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.item) {
+        setProjects(prev => prev.map(p => p.id === id ? { ...p, ...data.item } : p));
+        closeAddModal();
+        return { success: true, message: 'Project updated successfully!' };
+      }
+      return { success: false, message: data.message || 'Failed to update project' };
+    } catch (err) {
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, ...item, isCustom: true } : p));
+      closeAddModal();
+      return { success: true, message: 'Project updated locally!' };
+    }
+  };
+
   // Add Internship
   const addInternship = async (item: Omit<InternshipItem, 'id'>) => {
     if (!token) return { success: false, message: 'Unauthorized' };
@@ -330,7 +417,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Delete Item
-  const deleteItem = async (type: 'internships' | 'courses' | 'certificates', id: string) => {
+  const deleteItem = async (type: 'projects' | 'internships' | 'courses' | 'certificates', id: string) => {
     if (!token) return { success: false, message: 'Unauthorized' };
 
     try {
@@ -342,7 +429,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        if (type === 'internships') {
+        if (type === 'projects') {
+          setProjects(prev => prev.filter(p => p.id !== id));
+        } else if (type === 'internships') {
           setInternships(prev => prev.filter(i => i.id !== id));
         } else if (type === 'courses') {
           setCourses(prev => prev.filter(c => c.id !== id));
@@ -353,7 +442,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       return { success: false, message: data.message || 'Failed to delete' };
     } catch (err) {
-      if (type === 'internships') {
+      if (type === 'projects') {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      } else if (type === 'internships') {
         setInternships(prev => prev.filter(i => i.id !== id));
       } else if (type === 'courses') {
         setCourses(prev => prev.filter(c => c.id !== id));
@@ -382,14 +473,16 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const openAddModal = (type: 'internship' | 'course' | 'certificate') => {
+  const openAddModal = (type: 'project' | 'internship' | 'course' | 'certificate', projectToEdit?: Project | null) => {
     setAddModalType(type);
+    setEditingProject(projectToEdit || null);
     setIsAddModalOpen(true);
   };
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setAddModalType(null);
+    setEditingProject(null);
   };
 
   const openAdminLogin = () => setIsAdminLoginOpen(true);
@@ -398,6 +491,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   return (
     <PortfolioContext.Provider
       value={{
+        projects,
         internships,
         courses,
         certificates,
@@ -406,6 +500,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         loading,
         loginAdmin,
         logoutAdmin,
+        addProject,
+        updateProject,
         addInternship,
         addCourse,
         addCertificate,
@@ -415,6 +511,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         closeAdminLogin,
         isAddModalOpen,
         addModalType,
+        editingProject,
         openAddModal,
         closeAddModal,
         messages,

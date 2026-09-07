@@ -63,6 +63,20 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
               <span className="px-2.5 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-wider bg-white/[0.04] border border-white/15 text-white/80">
                 {project.category}
               </span>
+              {project.status && (
+                <span className={`px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-wider border ${
+                  project.status === 'Completed'
+                    ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-300'
+                    : 'bg-amber-950/40 border-amber-700/60 text-amber-300'
+                }`}>
+                  {project.status}
+                </span>
+              )}
+              {project.date && (
+                <span className="text-[11px] text-white/40 font-mono">
+                  • {project.date}
+                </span>
+              )}
               {project.metrics && (
                 <span className="text-[11px] text-white/40 font-mono">
                   • {project.metrics}
@@ -238,6 +252,17 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
           ) : (
             /* Default Overview Tab */
             <>
+              {project.image && (
+                <div className="rounded-sm overflow-hidden border border-white/10 max-h-56 w-full bg-black/40">
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              )}
+
               <div>
                 <h3 className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-2">
                   About the Project
@@ -287,8 +312,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
         {/* Footer actions */}
         <div className="p-4 sm:p-5 border-t border-white/10 bg-[#0a0a0a] flex items-center justify-between gap-3">
-          <div className="text-[11px] text-white/45 font-mono">
-            {project.githubUrl ? (
+          <div className="flex items-center gap-4 text-[11px] text-white/45 font-mono">
+            {project.githubUrl && (
               <a
                 href={project.githubUrl}
                 target="_blank"
@@ -296,9 +321,21 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                 className="inline-flex items-center gap-1.5 text-white/80 hover:text-white underline underline-offset-4"
               >
                 <Github className="w-3.5 h-3.5" />
-                <span>View on GitHub</span>
+                <span>GitHub</span>
               </a>
-            ) : (
+            )}
+            {project.liveDemoUrl && (
+              <a
+                href={project.liveDemoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 underline underline-offset-4"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Live Demo</span>
+              </a>
+            )}
+            {!project.githubUrl && !project.liveDemoUrl && (
               <span>Developed by Yogesh Camalanadan</span>
             )}
           </div>

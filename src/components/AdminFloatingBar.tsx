@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Plus, Briefcase, BookOpen, Award, MessageSquare, LogOut, Check, ChevronUp, ChevronDown, Mail } from 'lucide-react';
+import { Shield, Plus, Briefcase, BookOpen, Award, MessageSquare, LogOut, Check, ChevronUp, ChevronDown, Mail, Code2 } from 'lucide-react';
 import { usePortfolio } from '../context/PortfolioContext';
 
 export const AdminFloatingBar: React.FC = () => {
@@ -29,6 +29,17 @@ export const AdminFloatingBar: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() => {
+                  openAddModal('project');
+                  setExpanded(false);
+                }}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-blue-600/30 border border-slate-800 text-slate-200 hover:text-white text-xs font-medium transition-colors text-left"
+              >
+                <Code2 className="w-3.5 h-3.5 text-blue-400" />
+                <span>Add Project</span>
+              </button>
+
               <button
                 onClick={() => {
                   openAddModal('internship');

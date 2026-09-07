@@ -5,13 +5,18 @@ export interface Project {
   description: string;
   longDescription: string;
   tags: string[];
-  category: 'Full-Stack' | 'Frontend' | 'AI & Web';
+  category: 'Full-Stack' | 'Frontend' | 'AI & Web' | string;
   featured: boolean;
   githubUrl?: string;
   liveDemoUrl?: string;
   keyFeatures: string[];
   techStack: string[];
   metrics?: string;
+  status?: 'Completed' | 'In Progress';
+  date?: string;
+  image?: string;
+  isCustom?: boolean;
+  createdAt?: string;
 }
 
 export interface Experience {
